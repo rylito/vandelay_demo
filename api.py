@@ -139,21 +139,7 @@ class WarehouseInventoryView(APIView):
         return Response(inventory_data)
 
 
-
-
-
-
-#class CsrfExemptSessionAuthentication(SessionAuthentication):
-
-    #def enforce_csrf(self, request):
-        #return  # To not perform the csrf check previously happening
-
-    #def authenticate(self, request):
-        #print('WE ARE HERE')
-        #return (AnonymousUser(), None)
-
 class WarehouseInventoryRemoveView(APIView):
-    #authentication_classes = (CsrfExemptSessionAuthentication,)
     authentication_classes = (BasicAuthentication,)
 
     def post(self, request, warehouse_id, format=None):
@@ -165,7 +151,6 @@ class WarehouseInventoryRemoveView(APIView):
         removed_skus = []
 
         for sku in item_skus:
-            #item_obj = get_object_or_404(Item, item_sku=sku)
             try:
                 item_obj = Item.objects.get(item_sku=sku)
             except Item.DoesNotExist:
@@ -185,14 +170,6 @@ class WarehouseInventoryRemoveView(APIView):
         data = {
             "removedSKUs": removed_skus,
             "warehouseId": int(warehouse_id),
-            #"removedFromInventory": inventory_obj is not None
         }
-
-        #inventory_obj.item_quantity = quant
-        #inventory_obj.save()
-
-        #inventory_data = InventorySerializer(inventory_obj).data
-        #item_data = ItemSerializer(item_obj).data
-        #inventory_data.update(item_data)
 
         return Response(data)
