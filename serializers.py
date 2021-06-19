@@ -18,6 +18,7 @@ class FactorySerializer(serializers.ModelSerializer):
     factoryName = serializers.CharField(source='factory_name')
     factoryDescription = serializers.CharField(source='factory_description')
     factoryAddress = AddressSerializer(source='address')
+    factoryDetailLink = serializers.URLField(source='get_fully_qualified_url')
 
     class Meta:
         model = Factory
@@ -29,6 +30,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
     warehouseName = serializers.CharField(source='warehouse_name')
     warehouseDescription = serializers.CharField(source='warehouse_description')
     warehouseAddress = AddressSerializer(source='address')
+    warehouseDetailLink = serializers.URLField(source='get_fully_qualified_url')
 
     class Meta:
         model = Warehouse
@@ -40,6 +42,7 @@ class MachineSerializer(serializers.ModelSerializer):
     machineID = serializers.IntegerField(source='pk')
     machineName = serializers.CharField(source='machine_name')
     machineDescription = serializers.CharField(source='machine_description')
+    machineDetailLink = serializers.URLField(source='get_fully_qualified_url')
 
     class Meta:
         model = Machine
@@ -51,6 +54,7 @@ class ItemSerializer(serializers.ModelSerializer):
     itemSKU = serializers.IntegerField(source='item_sku')
     itemName = serializers.CharField(source='item_name')
     itemDescription = serializers.CharField(source='item_description')
+    itemDetailLink = serializers.URLField(source='get_fully_qualified_url')
 
     class Meta:
         model = Item
@@ -60,6 +64,7 @@ class ItemSerializer(serializers.ModelSerializer):
 class InventorySerializer(serializers.ModelSerializer):
     warehouseID = serializers.PrimaryKeyRelatedField(source='warehouse', read_only=True)
     itemQuantity = serializers.IntegerField(source='item_quantity')
+    inventoryDetailLink = serializers.URLField(source='get_fully_qualified_url')
 
     class Meta:
         model = Inventory
