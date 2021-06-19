@@ -4,6 +4,7 @@ from vandelay.models import Address, Factory, Warehouse, Machine, Inventory, Ite
 from vandelay.serializers import AddressSerializer, FactorySerializer, WarehouseSerializer, MachineSerializer, InventorySerializer, ItemSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework.authentication import BasicAuthentication
+from rest_framework import status
 
 
 # list
@@ -67,7 +68,7 @@ class InventoryItemsView(APIView):
         data = ItemSerializer(items, many=True).data
         return Response(data)
 
-    def put(self, request, format=None):
+    def post(self, request, format=None):
         data = request.data
 
         #TODO validate
@@ -75,6 +76,7 @@ class InventoryItemsView(APIView):
 
         try:
             item_obj = Item.objects.get(item_sku=sku)
+            return Response({'errorMsg': f'itemSKU already exists: {sku}'}, status=status.HTTP_400_BAD_REQUEST)
         except Item.DoesNotExist:
             item_obj = Item()
 
@@ -90,9 +92,36 @@ class InventoryItemsView(APIView):
 
 # detail
 class InventoryItemView(APIView):
+    authentication_classes = (BasicAuthentication,)
+    
     def get(self, request, item_id, format=None):
         item = get_object_or_404(Item, pk=item_id)
         data = ItemSerializer(item).data
+        return Response(data)
+
+
+    def patch(self, request, item_id, format=None):
+        item_obj = get_object_or_404(Item, pk=item_id)
+
+        sku = request.data.get('itemSKU')
+        if sku:
+            if Item.objects.filter(item_sku=sku).exclude(pk=item_obj.pk).exists():
+                return Response({'errorMsg': f'itemSKU already exists: {sku}'}, status=status.HTTP_400_BAD_REQUEST)
+            item_obj.item_sku = sku
+
+        mappings = {
+            'itemDescription': 'item_description',
+            'itemName': 'item_name'
+        }
+
+        for api_name, orm_prop in mappings.items():
+            val = request.data.get(api_name)
+            if val:
+                setattr(item_obj, orm_prop, val)
+
+        item_obj.save()
+
+        data = ItemSerializer(item_obj).data
         return Response(data)
 
 
@@ -121,8 +150,10 @@ class WarehouseInventoryView(APIView):
         item_sku = request.data['itemSKU']
         quant = request.data['itemQuantity']
 
-        # TODO throw bad args/params error
-        item_obj = get_object_or_404(Item, item_sku=item_sku)
+        try:
+            item_obj = Item.objects.get(item_sku=item_sku)
+        except Item.DoesNotExist:
+            return Response({'errorMsg': f'No item for itemSKU: {item_sku}'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             inventory_obj = Inventory.objects.get(warehouse=warehouse, item=item_obj)
@@ -139,37 +170,20 @@ class WarehouseInventoryView(APIView):
         return Response(inventory_data)
 
 
-class WarehouseInventoryRemoveView(APIView):
+
+class WarehouseInventoryDetailView(APIView):
     authentication_classes = (BasicAuthentication,)
 
-    def post(self, request, warehouse_id, format=None):
-        warehouse = get_object_or_404(Warehouse, pk=warehouse_id)
+    def get(self, request, warehouse_id, item_id, format=None):
+        inventory_item = get_object_or_404(Inventory, warehouse=warehouse_id, item=item_id)
 
-        # todo validate
-        item_skus = request.data
-
-        removed_skus = []
-
-        for sku in item_skus:
-            try:
-                item_obj = Item.objects.get(item_sku=sku)
-            except Item.DoesNotExist:
-                # TODO throw bad args/params error
-                continue
-
-            try:
-                inventory_obj = Inventory.objects.get(warehouse=warehouse, item=item_obj)
-            except Inventory.DoesNotExist:
-                inventory_obj = None
+        inventory_data = InventorySerializer(inventory_item).data
+        item_data = ItemSerializer(inventory_item.item).data
+        inventory_data.update(item_data)
+        return Response(inventory_data)
 
 
-            if inventory_obj:
-                inventory_obj.delete()
-                removed_skus.append(int(sku))
-
-        data = {
-            "removedSKUs": removed_skus,
-            "warehouseId": int(warehouse_id),
-        }
-
-        return Response(data)
+    def delete(self, request, warehouse_id, item_id, format=None):
+        inventory_item = get_object_or_404(Inventory, warehouse=warehouse_id, item=item_id)
+        inventory_item.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
