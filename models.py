@@ -1,4 +1,8 @@
 from django.db import models
+from django.urls import reverse
+
+#HOST = 'http://localhost:8000'
+HOST = 'https://www.transvec.com'
 
 class Address(models.Model):
     building_name = models.CharField(max_length=250)
@@ -24,6 +28,13 @@ class Factory(models.Model):
     def __str__(self):
         return f'{self.factory_name}'
 
+    def get_absolute_url(self):
+        return reverse('vandelay:factory_detail', kwargs={'factory_id': self.pk})
+
+    def get_fully_qualified_url(self):
+        return f'{HOST}{self.get_absolute_url()}'
+
+
 
 class Machine(models.Model):
     machine_name = models.CharField(max_length=250)
@@ -32,6 +43,13 @@ class Machine(models.Model):
 
     def __str__(self):
         return f'{self.machine_name}'
+
+    def get_absolute_url(self):
+        return reverse('vandelay:machine_detail', kwargs={'machine_id': self.pk})
+
+    def get_fully_qualified_url(self):
+        return f'{HOST}{self.get_absolute_url()}'
+
 
 
 class Warehouse(models.Model):
@@ -43,6 +61,13 @@ class Warehouse(models.Model):
     def __str__(self):
         return f'{self.warehouse_name}'
 
+    def get_absolute_url(self):
+        return reverse('vandelay:warehouse_detail', kwargs={'warehouse_id': self.pk})
+
+    def get_fully_qualified_url(self):
+        return f'{HOST}{self.get_absolute_url()}'
+
+
 
 class Item(models.Model):
     item_sku = models.CharField(max_length=250, unique=True)
@@ -51,6 +76,12 @@ class Item(models.Model):
 
     def __str__(self):
         return f'{self.item_name}'
+
+    def get_absolute_url(self):
+        return reverse('vandelay:inventory_item_detail', kwargs={'item_id' : self.pk})
+
+    def get_fully_qualified_url(self):
+        return f'{HOST}{self.get_absolute_url()}'
 
 
 class Inventory(models.Model):
@@ -64,3 +95,10 @@ class Inventory(models.Model):
 
     def __str__(self):
         return f'{self.warehouse} - {self.item} - {self.item_quantity}'
+
+    def get_absolute_url(self):
+        return reverse('vandelay:warehouse_inventory_detail', kwargs={'warehouse_id': self.warehouse.pk, 'item_id' : self.item.pk})
+
+    def get_fully_qualified_url(self):
+        return f'{HOST}{self.get_absolute_url()}'
+
